@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import axios from "axios";
 
-const FileForm = (props) => {
+const FileForm = ({responseType, onSuccess}) => {
     const [file, setFile] = React.useState(null);
     const [isLoading, setIsLoading] = React.useState(false);
     const [error, setError] = React.useState(false);
@@ -15,17 +15,24 @@ const FileForm = (props) => {
         setIsLoading(true);
         let formDate = new FormData();
         formDate.append("file", file);
-        await axios.post('http://localhost:8000/api/predict/file/?response_type=list', formDate)
-            .then(res => {
-                props.setData(res.data.predictions)
-                setError(null);
+        await axios.post('http://localhost:8000/api/predict/file/', formDate, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                params: {
+                    response_type: responseType.value,
+                },
+                responseType: responseType.value === 'file' ? 'blob' : 'json',
             })
-            .catch(e => {
-                props.setData([])
-                console.log(e)
-                setError(e.response.data.file ||    e.response.data || 'Ошибка')
-            })
-            .finally(() => setIsLoading(false));
+                .then((response) => {
+                    onSuccess(response)
+                    setError(null);
+                })
+                .catch(e => {
+                    console.log(e)
+                    setError(e.response.data.file || e.response.data || 'Ошибка')
+                })
+                .finally(() => setIsLoading(false));
     }
 
     return (
